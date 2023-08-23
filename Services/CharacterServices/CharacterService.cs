@@ -51,24 +51,29 @@ public class CharacterService : ICharacterService
 
     public async Task<ServiceResponse<List<GetCharacterDto>>> UpdateOne(UpdateCharacterDto updatedCharacter)
     {
-        var serviceRespone = new ServiceResponse<List<GetCharacterDto>>();
+        var serviceResponse = new ServiceResponse<List<GetCharacterDto>>();
         if (_characters.FirstOrDefault(c => c.Id == updatedCharacter.Id) == null)
         {
-            serviceRespone.Message = "Character not found";
-            serviceRespone.Success = false;
+            serviceResponse.Message = "Character not found";
+            serviceResponse.Success = false;
         }
         _characters.FirstOrDefault(c => c.Id == updatedCharacter.Id).Name = updatedCharacter.Name;
         _characters.FirstOrDefault(c => c.Id == updatedCharacter.Id).Profession = updatedCharacter.Profession;
         
-        serviceRespone.Data = _mapper.Map<List<GetCharacterDto>>(_characters);
-        return serviceRespone;
+        serviceResponse.Data = _mapper.Map<List<GetCharacterDto>>(_characters);
+        return serviceResponse;
     }
 
     public async Task<ServiceResponse<List<GetCharacterDto>>> DeleteById(int id)
     {
+        var serviceResponse = new ServiceResponse<List<GetCharacterDto>>();
+        if (_characters.FirstOrDefault(c => c.Id == id) == null)
+        {
+            serviceResponse.Message = "Character not found";
+            serviceResponse.Success = false;
+        }
         Character character = _characters.FirstOrDefault(c => c.Id == id);
         _characters.Remove(character);
-        var serviceResponse = new ServiceResponse<List<GetCharacterDto>>();
         serviceResponse.Data = _mapper.Map<List<GetCharacterDto>>(_characters);
         return serviceResponse;
     }
