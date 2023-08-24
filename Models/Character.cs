@@ -1,6 +1,4 @@
-﻿using dotnet_rpg2.Dtos;
-
-namespace dotnet_rpg2.Models;
+﻿namespace dotnet_rpg2.Models;
 
 public class Character
 {
@@ -8,4 +6,5 @@ public class Character
     public string Name { get; set; } = "BasicName";
     public Job Profession { get; set; } = Job.Knight;
     public int Hp { get; set; } = 10;
+    public User? User { get; set; }
 }
