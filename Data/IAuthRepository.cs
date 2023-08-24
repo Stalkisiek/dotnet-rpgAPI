@@ -1,10 +1,14 @@
-﻿using dotnet_rpg2.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace dotnet_rpg2.Data;
-
-public interface IAuthRepository
+namespace dotnet_rpg.Data
 {
-    Task<ServiceResponse<int>> Register(User user, string password);
-    Task<ServiceResponse<string>> Login(string username, string password); //Json Web token
-    Task<bool> UserExists(string username);
+    public interface IAuthRepository
+    {
+        Task<ServiceResponse<int>> Register(User user, string password);
+        Task<ServiceResponse<string>> Login(string username, string password);
+        Task<bool> UserExists(string username);
+    }
 }

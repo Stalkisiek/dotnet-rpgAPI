@@ -1,48 +1,45 @@
-﻿using AutoMapper;
-using dotnet_rpg2.Dtos;
-using dotnet_rpg2.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using dotnet_rpg.Dtos.User;
 using Microsoft.AspNetCore.Mvc;
 
-namespace dotnet_rpg2.Controllers;
-
-[ApiController]
-[Route("[controller]")]
-public class AuthController : ControllerBase
+namespace dotnet_rpg.Controllers
 {
-    private readonly IAuthRepository _auth;
-    private readonly IMapper _mapper;
+    [ApiController]
+    [Route("[controller]")]
+    public class AuthController : ControllerBase
+    {
+        private readonly IAuthRepository _authRepo;
 
-    public AuthController(IAuthRepository auth, IMapper mapper)
-    {
-        _auth = auth;
-        _mapper = mapper;
-    }
-    
-    [HttpPost("Register")]
-    public async Task<ActionResult<ServiceResponse<int>>> Register(UserRegisterDto user)
-    {
-        var response = await _auth.Register(
-            new User { Username = user.Username }, user.Password
-        );
-        if (response.Data == 0)
+        public AuthController(IAuthRepository authRepo)
         {
-            return BadRequest(response);
+            _authRepo = authRepo;
         }
 
-        return Ok(response);
-    }
-
-    [HttpPost("Login")]
-    public async Task<ActionResult<ServiceResponse<string>>> Login(UserLoginDto user)
-    {
-        var response = await _auth.Login(user.Username, user.Password);
-        if (response.Success)
+        [HttpPost("Register")]
+        public async Task<ActionResult<ServiceResponse<int>>> Register(UserRegisterDto request)
         {
+            var response = await _authRepo.Register(
+                new User { Username = request.Username }, request.Password
+            );
+            if(!response.Success)
+            {
+                return BadRequest(response);
+            }
             return Ok(response);
         }
-        else
+
+        [HttpPost("Login")]
+        public async Task<ActionResult<ServiceResponse<int>>> Login(UserLoginDto request)
         {
-            return BadRequest(response);
+            var response = await _authRepo.Login(request.Username, request.Password);
+            if(!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
         }
     }
 }

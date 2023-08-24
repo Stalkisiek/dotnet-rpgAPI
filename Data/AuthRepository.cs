@@ -1,117 +1,123 @@
-﻿
+using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
-using dotnet_rpg2.Models;
+using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
 
-namespace dotnet_rpg2.Data;
-
-public class AuthRepository : IAuthRepository
+namespace dotnet_rpg.Data
 {
-    private readonly DataContext _context;
-    private readonly IConfiguration _configuration;
-
-    public AuthRepository(DataContext context, IConfiguration configuration)
+    public class AuthRepository : IAuthRepository
     {
-        _context = context;
-        _configuration = configuration;
-    }
-    
-    public async Task<ServiceResponse<int>> Register(User user, string password)
-    {
-        var serviceResponse = new ServiceResponse<int>();
-        if (!await UserExists(user.Username))
+        private readonly DataContext _context;
+        private readonly IConfiguration _configuration;
+        public AuthRepository(DataContext context, IConfiguration configuration)
         {
-            CreatePasswordHash(password, out byte[] passwordHash, out byte[] passwordSalt);
-            user.PasswordHash = passwordHash;
-            user.PasswordSalt = passwordSalt;
+            _configuration = configuration;
+            _context = context;
 
-            await _context.Users.AddAsync(user);
-            await _context.SaveChangesAsync();
-            
-            serviceResponse.Data = user.Id;
-            return serviceResponse;
         }
-        else
-        {
-            serviceResponse.Success = false;
-            serviceResponse.Message = "User already exists!";
-            return serviceResponse;
-        }
-    }
 
-    public async Task<ServiceResponse<string>> Login(string username, string password)
-    {
-        var response = new ServiceResponse<string>();
-        if (await UserExists(username))
+        public async Task<ServiceResponse<string>> Login(string username, string password)
         {
-            User user = (await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower()))!;
-            if (!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
+            var response = new ServiceResponse<string>();
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username.ToLower().Equals(username.ToLower()));
+            if (user is null)
             {
-                response.Message = "Wrong password";
                 response.Success = false;
+                response.Message = "User not found.";
+            }
+            else if (!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
+            {
+                response.Success = false;
+                response.Message = "Wrong password.";
             }
             else
             {
                 response.Data = CreateToken(user);
             }
 
-        }
-        else
-        {
-            response.Message = "Not found";
-            response.Success = false;
+            return response;
         }
 
-        return response;
-    }
-
-    public async Task<bool> UserExists(string username)
-    {
-        return await _context.Users.AnyAsync(c => c.Username.ToLower() == username.ToLower());
-    }
-
-    private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
-    {
-        using var hmac = new System.Security.Cryptography.HMACSHA512();
-        passwordSalt = hmac.Key;
-        passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-    }
-
-    private bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwardSalt)
-    {
-        using var hmac = new System.Security.Cryptography.HMACSHA512(passwardSalt);
-        var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-        return computedHash.SequenceEqual(passwordHash);
-    }
-
-    private string CreateToken(User user)
-    {
-        var claims = new List<Claim>
+        public async Task<ServiceResponse<int>> Register(User user, string password)
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Username)
-        };
+            var response = new ServiceResponse<int>();
+            if (await UserExists(user.Username))
+            {
+                response.Success = false;
+                response.Message = "User already exists.";
+                return response;
+            }
 
-        var appSettingsToken = _configuration.GetSection("AppSettings:Token").Value;
-        if (appSettingsToken is null)
-            throw new Exception("AppSettings Token is null!");
+            CreatePasswordHash(password, out byte[] passwordHash, out byte[] passwordSalt);
 
-        SymmetricSecurityKey key = new SymmetricSecurityKey(System.Text.Encoding.UTF8
-            .GetBytes(appSettingsToken));
+            user.PasswordHash = passwordHash;
+            user.PasswordSalt = passwordSalt;
 
-        SigningCredentials creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+            response.Data = user.Id;
+            return response;
+        }
 
-        var tokenDescriptor = new SecurityTokenDescriptor
+        public async Task<bool> UserExists(string username)
         {
-            Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.Now.AddDays(1),
-            SigningCredentials = creds
-        };
+            if (await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower()))
+            {
+                return true;
+            }
+            return false;
+        }
 
-        JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
-        SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
+        private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
+        {
+            using (var hmac = new System.Security.Cryptography.HMACSHA512())
+            {
+                passwordSalt = hmac.Key;
+                passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+            }
+        }
 
-        return tokenHandler.WriteToken(token);
+        private bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwordSalt)
+        {
+            using (var hmac = new System.Security.Cryptography.HMACSHA512(passwordSalt))
+            {
+                var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                return computedHash.SequenceEqual(passwordHash);
+            }
+        }
+
+        private string CreateToken(User user)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username)
+            };
+
+            var appSettingsToken = _configuration.GetSection("AppSettings:Token").Value;
+            if (appSettingsToken is null)
+                throw new Exception("AppSettings Token is null!");
+
+            SymmetricSecurityKey key = new SymmetricSecurityKey(System.Text.Encoding.UTF8
+                .GetBytes(appSettingsToken));
+
+            SigningCredentials creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.Now.AddDays(1),
+                SigningCredentials = creds
+            };
+
+            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
+
+            return tokenHandler.WriteToken(token);
+        }
     }
 }
