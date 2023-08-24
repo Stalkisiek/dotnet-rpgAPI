@@ -93,16 +93,16 @@ public class AuthRepository : IAuthRepository
             new Claim(ClaimTypes.Name, user.Username)
         };
 
-        var appSettingToken = _configuration.GetSection("AppSettings:Token").Value;
-        if (appSettingToken is null)
-        {
-            throw new Exception("AppSettings Token is null");
-        }
+        var appSettingsToken = _configuration.GetSection("AppSettings:Token").Value;
+        if (appSettingsToken is null)
+            throw new Exception("AppSettings Token is null!");
 
-        SymmetricSecurityKey key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(appSettingToken));
+        SymmetricSecurityKey key = new SymmetricSecurityKey(System.Text.Encoding.UTF8
+            .GetBytes(appSettingsToken));
+
         SigningCredentials creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
-        var tokenDescripot = new SecurityTokenDescriptor
+        var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.Now.AddDays(1),
@@ -110,7 +110,7 @@ public class AuthRepository : IAuthRepository
         };
 
         JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
-        SecurityToken token = tokenHandler.CreateToken(tokenDescripot);
+        SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
 
         return tokenHandler.WriteToken(token);
     }
