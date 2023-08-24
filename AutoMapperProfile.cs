@@ -1,16 +1,17 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using AutoMapper;
+using dotnet_rpg2.Dtos;
+using dotnet_rpg2.Models;
 
-namespace dotnet_rpg
+namespace dotnet_rpg2;
+
+public class AutoMapperProfile : Profile
 {
-    public class AutoMapperProfile : Profile
+    public AutoMapperProfile()
     {
-        public AutoMapperProfile()
-        {
-            CreateMap<Character,GetCharacterDto>();
-            CreateMap<AddCharacterDto,Character>();
-        }
+        CreateMap<GetCharacterDto, Character>();
+        CreateMap<Character, GetCharacterDto>();
+        CreateMap<Character, AddCharacterDto>();
+        CreateMap<AddCharacterDto, Character>();
+        CreateMap<UserRegisterDto, User>();
     }
 }
