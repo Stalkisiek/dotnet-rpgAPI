@@ -6,8 +6,6 @@ namespace dotnet_rpg2.Services.CharacterServices;
 
 public class CharacterService : ICharacterService
 {
-    
-
     private static List<Character> _characters = new List<Character>
     {
         new Character(),
