@@ -18,7 +18,8 @@ public class CharacterController : ControllerBase
         _characterService = characterService;
     }
     
-    [HttpGet]
+    [AllowAnonymous]
+    [HttpGet("All")]
     public async Task<ActionResult<ServiceResponse<List<GetCharacterDto>>>> Get()
     {
         var response = await _characterService.GetAll();
