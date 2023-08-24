@@ -1,4 +1,4 @@
-﻿using System.Data.Entity;
+﻿
 using dotnet_rpg2.Models;
 
 namespace dotnet_rpg2.Data;
@@ -16,7 +16,7 @@ public class AuthRepository : IAuthRepository
         var serviceResponse = new ServiceResponse<int>();
         if (!await UserExists(user.Username))
         {
-            CreatePassowrdHash(password, out byte[] passwordHash, out byte[] passwordSalt);
+            CreatePasswordHash(password, out byte[] passwordHash, out byte[] passwordSalt);
             user.PasswordHash = passwordHash;
             user.PasswordSalt = passwordSalt;
 
@@ -41,10 +41,10 @@ public class AuthRepository : IAuthRepository
 
     public async Task<bool> UserExists(string username)
     {
-        return await _context.Users.FirstOrDefaultAsync(c => c.Username.ToLower() == username.ToLower()) != null;
+        return await _context.Users.AnyAsync(c => c.Username.ToLower() == username.ToLower());
     }
 
-    private void CreatePassowrdHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
+    private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
     {
         using var hmac = new System.Security.Cryptography.HMACSHA512();
         passwordSalt = hmac.Key;
