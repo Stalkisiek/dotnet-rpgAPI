@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Security.Claims;
 using dotnet_rpg2.Dtos;
 using dotnet_rpg2.Models;
 using dotnet_rpg2.Services.CharacterServices;
@@ -18,13 +19,11 @@ public class CharacterController : ControllerBase
         _characterService = characterService;
     }
     
-    [AllowAnonymous]
     [HttpGet("All")]
     public async Task<ActionResult<ServiceResponse<List<GetCharacterDto>>>> Get()
     {
-        var response = await _characterService.GetAll();
-        // Add logging or debugging statements here to inspect 'response'
-        return Ok(response);
+        int userId = int.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)!.Value);
+        return Ok(await _characterService.GetAll(userId));
     }
 
     
