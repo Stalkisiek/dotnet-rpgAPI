@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Security.Claims;
 using dotnet_rpg2.Dtos;
 using dotnet_rpg2.Models;
 using dotnet_rpg2.Services.CharacterServices;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace dotnet_rpg2.Controllers;
 
-[Authorize]
+//[Authorize]
 [ApiController]
 [Route("[controller]")]
 public class CharacterController : ControllerBase
@@ -20,12 +21,24 @@ public class CharacterController : ControllerBase
     
     [AllowAnonymous]
     [HttpGet("All")]
-    public async Task<ActionResult<ServiceResponse<List<GetCharacterDto>>>> Get()
+    public async Task<ActionResult<ServiceResponse<List<GetCharacterDto>>>> GetAll()
     {
-        var response = await _characterService.GetAll();
-        // Add logging or debugging statements here to inspect 'response'
-        return Ok(response);
+        try
+        {
+            int userId = int.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value);
+            ServiceResponse<List<GetCharacterDto>> response = new ServiceResponse<List<GetCharacterDto>>();
+            //var response = await _characterService.GetAll(userId);
+            // Add logging or debugging statements to inspect 'response'
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            // Log the exception for debugging purposes
+            // You can also return an error response if needed
+            return StatusCode(500, "An error occurred.");
+        }
     }
+
 
     
     [HttpGet]
