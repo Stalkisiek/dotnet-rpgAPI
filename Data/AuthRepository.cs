@@ -34,9 +34,30 @@ public class AuthRepository : IAuthRepository
         }
     }
 
-    public Task<ServiceResponse<string>> Login(string username, string password)
+    public async Task<ServiceResponse<string>> Login(string username, string password)
     {
-        throw new NotImplementedException();
+        var response = new ServiceResponse<string>();
+        if (await UserExists(username))
+        {
+            User user = (await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower()))!;
+            if (!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
+            {
+                response.Message = "Wrong password";
+                response.Success = false;
+            }
+            else
+            {
+                response.Data = user.Id.ToString();
+            }
+
+        }
+        else
+        {
+            response.Message = "Not found";
+            response.Success = false;
+        }
+
+        return response;
     }
 
     public async Task<bool> UserExists(string username)
@@ -49,5 +70,12 @@ public class AuthRepository : IAuthRepository
         using var hmac = new System.Security.Cryptography.HMACSHA512();
         passwordSalt = hmac.Key;
         passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+    }
+
+    private bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwardSalt)
+    {
+        using var hmac = new System.Security.Cryptography.HMACSHA512(passwardSalt);
+        var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+        return computedHash.SequenceEqual(passwordHash);
     }
 }

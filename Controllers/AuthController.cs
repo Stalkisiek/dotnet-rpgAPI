@@ -18,7 +18,7 @@ public class AuthController : ControllerBase
         _mapper = mapper;
     }
     
-    [HttpPost]
+    [HttpPost("Register")]
     public async Task<ActionResult<ServiceResponse<int>>> Register(UserRegisterDto user)
     {
         var response = await _auth.Register(
@@ -30,5 +30,19 @@ public class AuthController : ControllerBase
         }
 
         return Ok(response);
+    }
+
+    [HttpPost("Login")]
+    public async Task<ActionResult<ServiceResponse<string>>> Login(UserLoginDto user)
+    {
+        var response = await _auth.Login(user.Username, user.Password);
+        if (response.Success)
+        {
+            return Ok(response);
+        }
+        else
+        {
+            return BadRequest(response);
+        }
     }
 }
