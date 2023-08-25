@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using System.Security.Claims;
-using dotnet_rpg2.Dtos;
+﻿using dotnet_rpg2.Dtos;
 using dotnet_rpg2.Models;
 using dotnet_rpg2.Services.CharacterServices;
 using Microsoft.AspNetCore.Authorization;
@@ -30,10 +28,14 @@ public class CharacterController : ControllerBase
     [Route("{id:int}")]
     public async Task<ActionResult<ServiceResponse<GetCharacterDto>>> GetById(int id)
     {
-        var serviceResponse = new ServiceResponse<GetCharacterDto>();
-        serviceResponse = await _characterService.GetById(id);
+        ServiceResponse<GetCharacterDto> serviceResponse = await _characterService.GetById(id);
         if (serviceResponse.Success == false)
         {
+            if (serviceResponse.Message == "No permissions")
+            {
+                return BadRequest(serviceResponse);
+            }
+
             return NotFound(serviceResponse);
         }
         return Ok(serviceResponse);
@@ -48,26 +50,24 @@ public class CharacterController : ControllerBase
     [HttpPut("UpdateCharacter")]
     public async Task<ActionResult<ServiceResponse<List<GetCharacterDto>>>> UpdateOne(UpdateCharacterDto updatedCharacter)
     {
-        var servicerResponse = new ServiceResponse<List<GetCharacterDto>>();
-        servicerResponse = await _characterService.UpdateOne(updatedCharacter);
-        if (servicerResponse.Success == false)
+        ServiceResponse<List<GetCharacterDto>> serviceResponse = await _characterService.UpdateOne(updatedCharacter);
+        if (serviceResponse.Success == false)
         {
-            return NotFound(servicerResponse);
+            return NotFound(serviceResponse);
         }
 
-        return Ok(servicerResponse);
+        return Ok(serviceResponse);
     }
     
     [HttpDelete("DeleteCharacter")]
     public async Task<ActionResult<ServiceResponse<List<GetCharacterDto>>>> DeleteById(int id)
     {
-        var servicerResponse = new ServiceResponse<List<GetCharacterDto>>();
-        servicerResponse = await _characterService.DeleteById(id);
-        if (servicerResponse.Success == false)
+        ServiceResponse<List<GetCharacterDto>> serviceResponse = await _characterService.DeleteById(id);
+        if (serviceResponse.Success == false)
         {
-            return NotFound(servicerResponse);
+            return NotFound(serviceResponse);
         }
 
-        return Ok(servicerResponse);
+        return Ok(serviceResponse);
     }
 }

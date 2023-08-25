@@ -34,13 +34,20 @@ public class CharacterService : ICharacterService
     public async Task<ServiceResponse<GetCharacterDto>> GetById(int id)
     {
         var serviceResponse = new ServiceResponse<GetCharacterDto>();
-        var dbCharacter = await _context.Characters.FirstOrDefaultAsync(c => c.Id == id);
-        serviceResponse.Data = _mapper.Map<GetCharacterDto>(dbCharacter);
-        if (serviceResponse.Data == null)
+        Character? dbCharacter = await _context.Characters.Include(character => character.User!).FirstOrDefaultAsync(c => c.Id == id);
+        if (dbCharacter == null)
         {
             serviceResponse.Message = "Character not found\n";
             serviceResponse.Success = false;
+            return serviceResponse;
         }
+        if (dbCharacter.User!.Id != GetUserId())
+        {
+            serviceResponse.Success = false;
+            serviceResponse.Message = "No permissions";
+            return serviceResponse;
+        }
+        serviceResponse.Data = _mapper.Map<GetCharacterDto>(dbCharacter);
         return serviceResponse;
     }
     
@@ -82,7 +89,7 @@ public class CharacterService : ICharacterService
     public async Task<ServiceResponse<List<GetCharacterDto>>> DeleteById(int id)
     {
         var serviceResponse = new ServiceResponse<List<GetCharacterDto>>();
-        Character? character = await _context.Characters.FirstOrDefaultAsync(c => c.Id == id);
+        Character? character = await _context.Characters.FirstOrDefaultAsync(c => c.Id == id && c.User!.Id == GetUserId());
         if (character == null)
         {
             serviceResponse.Message = "Character not found";
@@ -93,7 +100,7 @@ public class CharacterService : ICharacterService
             _context.Characters.Remove(character);
             await _context.SaveChangesAsync();
         }
-        serviceResponse.Data = await _context.Characters.Select(c => _mapper.Map<GetCharacterDto>(c)).ToListAsync();
+        serviceResponse.Data = await _context.Characters.Where(c => c.User!.Id == GetUserId()).Select(c => _mapper.Map<GetCharacterDto>(c)).ToListAsync();
         return serviceResponse;
     }
 }
