@@ -68,8 +68,8 @@ public class CharacterService : ICharacterService
     public async Task<ServiceResponse<List<GetCharacterDto>>> UpdateOne(UpdateCharacterDto updatedCharacter)
     {
         var serviceResponse = new ServiceResponse<List<GetCharacterDto>>();
-        var character = await _context.Characters.FirstOrDefaultAsync(c => c.Id == updatedCharacter.Id);
-        if (character == null)
+        var character = await _context.Characters.Include(c => c.User).FirstOrDefaultAsync(c => c.Id == updatedCharacter.Id);
+        if (character == null || character.User!.Id != GetUserId())
         {
             serviceResponse.Message = "Character not found";
             serviceResponse.Success = false;
@@ -82,7 +82,7 @@ public class CharacterService : ICharacterService
             await _context.SaveChangesAsync();
         }
 
-        serviceResponse.Data = await _context.Characters.Select(c => _mapper.Map<GetCharacterDto>(c)).ToListAsync();
+        serviceResponse.Data = await _context.Characters.Where(c => c.User!.Id == GetUserId()).Select(c => _mapper.Map<GetCharacterDto>(c)).ToListAsync();
         return serviceResponse;
     }
 
