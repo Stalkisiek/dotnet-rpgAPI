@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Security.Claims;
+using AutoMapper;
 using dotnet_rpg2.Dtos;
 using dotnet_rpg2.Models;
 
@@ -8,17 +9,24 @@ public class CharacterService : ICharacterService
 {
     private readonly IMapper _mapper;
     private readonly DataContext _context;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public CharacterService(IMapper mapper, DataContext context)
+    public CharacterService(IMapper mapper, DataContext context, IHttpContextAccessor httpContextAccessor)
     {
         _mapper = mapper;
         _context = context;
+        _httpContextAccessor = httpContextAccessor;
     }
-    
-    public async Task<ServiceResponse<List<GetCharacterDto>>> GetAll(int userId)
+
+    private int GetUserId()
+    {
+        return int.Parse(_httpContextAccessor.HttpContext!.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    }
+
+    public async Task<ServiceResponse<List<GetCharacterDto>>> GetAll()
     {
         var serviceResponse = new ServiceResponse<List<GetCharacterDto>>();
-        var dbCharacters = await _context.Characters.Where(c => c.User!.Id == userId).ToListAsync();
+        var dbCharacters = await _context.Characters.Where(c => c.User!.Id == GetUserId()).ToListAsync();
         serviceResponse.Data = dbCharacters.Select(c => _mapper.Map<GetCharacterDto>(c)).ToList();
         return serviceResponse;
     }
