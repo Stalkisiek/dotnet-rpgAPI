@@ -7,4 +7,5 @@ public class Character
     public Job Profession { get; set; } = Job.Knight;
     public int Hp { get; set; } = 10;
     public User? User { get; set; }
+    public Weapon? Weapon { get; set; }
 }
