@@ -103,4 +103,39 @@ public class CharacterService : ICharacterService
         serviceResponse.Data = await _context.Characters.Where(c => c.User!.Id == GetUserId()).Select(c => _mapper.Map<GetCharacterDto>(c)).ToListAsync();
         return serviceResponse;
     }
+
+    public async Task<ServiceResponse<GetCharacterDto>> AddSkill(AddCharacterSkillDto newSkill)
+    {
+        var response = new ServiceResponse<GetCharacterDto>();
+        try
+        {
+            var skill = await _context.Skills.FirstOrDefaultAsync(s => s.Id == newSkill.SkillId);
+            var character = await _context.Characters.Include(c => c.User).Include(c => c.Weapon).Include(c => c.Skills).FirstOrDefaultAsync(c => c.Id == newSkill.CharacterId);
+            if (skill is null || character is null)
+            {
+                response.Success = false;
+                response.Message = "Not found";
+                return response;
+            }
+
+            if (character.User!.Id != GetUserId())
+            {
+                response.Success = false;
+                response.Message = "Not sufficient authorization";
+                return response;
+            }
+
+            character.Skills!.Add(skill);
+            await _context.SaveChangesAsync();
+            
+            response.Data = _mapper.Map<GetCharacterDto>(character);
+        }
+        catch (Exception e)
+        {
+            response.Success = false;
+            response.Message = e.Message;
+        }
+
+        return response;
+    }
 }

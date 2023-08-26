@@ -46,6 +46,12 @@ public class CharacterController : ControllerBase
     {
         return Ok(await _characterService.AddOne(newCharacter));
     }
+
+    [HttpPost("Skill")]
+    public async Task<ActionResult<ServiceResponse<GetCharacterDto>>> AddSkillToCharacter(AddCharacterSkillDto newSkill)
+    {
+        return Ok(await _characterService.AddSkill(newSkill));
+    }
     
     [HttpPut("UpdateCharacter")]
     public async Task<ActionResult<ServiceResponse<List<GetCharacterDto>>>> UpdateOne(UpdateCharacterDto updatedCharacter)
